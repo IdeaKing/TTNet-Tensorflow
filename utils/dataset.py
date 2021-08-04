@@ -58,19 +58,17 @@ class Dataset():
         return "Might work on this later..."
 
     def dataset(self):
-        image_fps = self.events_infor[0]
-        ball_position = self.events_infor[1]
-        target_events = self.events_infor[2]
-        segmentation_fp = self.events_infor[3]
 
-        image_stack = self.parse_images(images=image_fps, mask=False)
-        ball_position = self.coordinate_adjustment(ball_position=ball_position)
-        mask = self.parse_images(images=segmentation_fp, mask=True)
+        events_infor = np.asarray(self.events_infor)
+        image_fps = events_infor[:,0]
+        ball_position = events_infor[:,1]
+        target_events = events_infor[:,2]
+        segmentation_fp = events_infor[:,3]
 
         # image_stack, ball_position, mask = self.augment(image, coordinate, mask)
-        image_ds = data.Dataset.from_tensor_slices(image_stack)
+        image_ds = data.Dataset.from_tensor_slices(image_fps)
         position_ds = data.Dataset.from_tensor_slices(ball_position)
-        mask_ds = data.Dataset.from_tensor_slices(mask)
+        mask_ds = data.Dataset.from_tensor_slices(segmentation_fp)
         events_ds = data.Dataset.from_tensor_slices(target_events)
 
         image_ds = image_ds.map(self.parse_images(), num_parallel_calls=data.experimental.AUTOTUNE)
@@ -80,7 +78,11 @@ class Dataset():
         ds = data.Dataset.zip((image_ds, position_ds, mask_ds, events_ds))
         return ds
 
+if __name__ == "__main__":
+    from utils.data_utils import *
+    from utils.configs import configs
 
+    events_infor, events_labels = data_preparer(configs=configs)
 
 
         

@@ -12,6 +12,6 @@ parser.add_argument(
 parser.add_argument(
     "--batch-size", type=int, default=8)
 parser.add_argument(
-    "--frames", type=int, default=9)
+    "--num-frames-sequence", type=int, default=9)
 configs = parser.parse_args()
 
