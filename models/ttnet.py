@@ -86,7 +86,7 @@ def event_spotting(input, dropout):
     fc2 = Dense(units=2, activation="sigmoid")(relu2)
     return fc2
 
-def ttnet(dims, dropout=0.1, segmentation=True, spotting=True):
+def ttnet(dims, dropout=0.1):
     """TTNet Model.
     
     Notes:
@@ -94,21 +94,11 @@ def ttnet(dims, dropout=0.1, segmentation=True, spotting=True):
     """
     input = Input(shape=(dims[0], dims[1], dims[2]*3))
     detection, block2, block3, block4, block5, block6 = ball_detection(
-        input=input, dropout=dropout)
+    input=input, dropout=dropout)
+    mask = sem_segmentation(inputs=[block2, block3, block4, block5])
+    events = event_spotting(input=block6, dropout=dropout)
+    model = Model(inputs=[input], outputs=[detection, events, mask])
 
-    if segmentation:
-        mask = sem_segmentation(inputs=[block2, block3, block4, block5])
-    if spotting:
-        events = event_spotting(input=block6, dropout=dropout)
-    
-    if segmentation and spotting:
-        model = Model(inputs=[input], outputs=[detection, mask, events])
-    elif segmentation and not spotting:
-        model = Model(inputs=[input], outputs=[detection, mask])
-    elif spotting and not segmentation:
-        model = Model(inputs=[input], outputs=[detection, events])
-    else:
-        model = Model(inputs=[input], outputs=[detection])
     return model
     
 if __name__ == "__main__":
