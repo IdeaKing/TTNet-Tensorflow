@@ -4,4 +4,4 @@ Unofficial Tensorflow Implementation of TTNet: Real-time temporal and spatial vi
 Work in progress, things that need to be done:
 - Custom training loop (started)
 - Custom metrics
-- Dataset creation (started)
+- Dataset creation (completed)
