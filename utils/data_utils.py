@@ -1,7 +1,6 @@
-from utils.configs import configs
-
 import os
 import json
+
 import numpy as np
 
 def smooth_event_labelling(event_class, smooth_idx, event_frameidx):
@@ -55,6 +54,9 @@ def data_preparer(configs, dataset_type="training"):
 
                     # Get the last frame in the sequence so that we can append the ball position
                     last_frame = frame + num_frames_from_event
+                    if '{}'.format(last_frame) not in ball_annos.keys():
+                        # print('smooth_idx: {} - no ball position for the frame idx {}'.format(event_frame, last_frame))
+                        continue
                     ball_position_xy = ball_annos["{}".format(last_frame)]
                     ball_position_xy = np.array([ball_position_xy["x"], ball_position_xy["y"]], dtype=np.int)
 
@@ -64,7 +66,7 @@ def data_preparer(configs, dataset_type="training"):
                     # Get the path to the segmentation frame using the last frame
                     seg_path = os.path.join(annos_dir, game, "segmentation_masks", "{}.png".format(last_frame))
                     if not os.path.isfile(seg_path):
-                        print("smooth_idx: {} - The segmentation path {} is invalid".format(frame, seg_path))
+                        # print("smooth_idx: {} - The segmentation path {} is invalid".format(frame, seg_path))
                         continue
                     events_dict = events_dict = {
                         "bounce": 0,
