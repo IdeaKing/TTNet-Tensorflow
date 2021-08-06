@@ -2,13 +2,14 @@
 # 2021-08-05
 # TTNet-Tensorflow
 
-import tensorflow as tf
-import numpy as np
 import cv2
+import numpy as np
+import tensorflow as tf
 from tensorflow import data
 
+
 class TTNetDataset():
-    def __init__(self, events_infor, org_size, input_size):
+    def __init__(self, events_infor, org_size, input_size, configs):
         self.events_infor = events_infor
         self.w_org = org_size[0]
         self.h_org = org_size[1]
@@ -16,10 +17,10 @@ class TTNetDataset():
         self.h_input = input_size[1]
         self.w_resize_ratio = self.w_org / self.w_input
         self.h_resize_ratio = self.h_org / self.h_input
+        self.configs = configs
 
     def parse_images(self, images: np.ndarray):
         """Open and perform operations on all images.
-        
         Parameters:
             images (np.ndarray): Array of image filepaths
         Returns:
@@ -50,14 +51,24 @@ class TTNetDataset():
         ball_position = np.asarray(ball_position, dtype=np.int32)
         return ball_position
 
+    def configure_for_performance(self, ds):
+        """Originally created by Yan Gobeil
+        towardsdatascience.com/what-is-the-best-input-pipeline-to-train-image-classification-models-with-tf-keras-eb3fe26d3cc5
+        """
+        ds = ds.shuffle(buffer_size=1000)
+        ds = ds.batch(self.configs.batch_size)
+        ds = ds.repeat()
+        ds = ds.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+        return ds
+
     def get_dataset(self):
         """Creates and zips the dataset."""
         # Separate the data and convert into lists
         events_infor = np.asarray(self.events_infor)
-        image_fps = events_infor[:,0].tolist()
-        ball_position = events_infor[:,1].tolist()
-        target_events = events_infor[:,2].tolist()
-        segmentation_fp = events_infor[:,3].tolist()
+        image_fps = events_infor[:, 0].tolist()
+        ball_position = events_infor[:, 1].tolist()
+        target_events = events_infor[:, 2].tolist()
+        segmentation_fp = events_infor[:, 3].tolist()
         # Convert all of the data into tensor slices
         image_ds = data.Dataset.from_tensor_slices(image_fps)
         position_ds = data.Dataset.from_tensor_slices(ball_position)
@@ -67,20 +78,21 @@ class TTNetDataset():
         print("Running image dataset.")
         image_ds = image_ds.map(
             lambda x: tf.numpy_function(
-                self.parse_images, inp=[x], Tout=[tf.uint8]), 
+                self.parse_images, inp=[x], Tout=[tf.uint8]),
             num_parallel_calls=data.experimental.AUTOTUNE)
         print("Running mask dataset.")
         mask_ds = mask_ds.map(
             lambda x: tf.numpy_function(
-                self.parse_masks, inp=[x], Tout=[tf.int8]), 
+                self.parse_masks, inp=[x], Tout=[tf.int8]),
             num_parallel_calls=data.experimental.AUTOTUNE)
         print("Running position dataset.")
         position_ds = position_ds.map(
             lambda x: tf.numpy_function(
-                self.coordinate_adjustment, inp=[x], Tout=tf.int32), 
+                self.coordinate_adjustment, inp=[x], Tout=tf.int32),
             num_parallel_calls=data.experimental.AUTOTUNE)
-        ds = data.Dataset.zip((image_ds, position_ds, mask_ds, events_ds))
+        ds = data.Dataset.zip((image_ds, position_ds, events_ds, mask_ds))
         print("Dataset zipped.")
+        ds = self.configure_for_performance(ds=ds)
         return ds
         
 if __name__ == "__main__":
@@ -91,8 +103,8 @@ if __name__ == "__main__":
     events_infor, events_labels = data_preparer(configs=configs)
 
     ttnet_dataset_creator = TTNetDataset(
-        events_infor=events_infor, 
-        org_size=configs.original_image_shape, 
+        events_infor=events_infor,
+        org_size=configs.original_image_shape,
         input_size=configs.processed_image_shape)
 
     ttnet_dataset = ttnet_dataset_creator.get_dataset()
