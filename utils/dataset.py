@@ -44,16 +44,10 @@ class TTNetDataset():
         mask = np.asarray(mask).astype(np.int8)
         return mask
 
-    def coordinate_adjustment(self, ball_position: np.ndarray):
-        """Change the position coordinates of the ball to scale to training."""
-        ball_position[0] = ball_position[0]/self.w_resize_ratio
-        ball_position[1] = ball_position[1]/self.h_resize_ratio
-        ball_position = np.asarray(ball_position, dtype=np.int32)
-        return ball_position
-
     def configure_for_performance(self, ds):
         """Originally created by Yan Gobeil
-        towardsdatascience.com/what-is-the-best-input-pipeline-to-train-image-classification-models-with-tf-keras-eb3fe26d3cc5
+        towardsdatascience.com/what-is-the-best-input-pipeline-to-train-image-
+        classification-models-with-tf-keras-eb3fe26d3cc5
         """
         ds = ds.shuffle(buffer_size=1000)
         ds = ds.batch(self.configs.batch_size)
@@ -64,14 +58,16 @@ class TTNetDataset():
     def get_dataset(self):
         """Creates and zips the dataset."""
         # Separate the data and convert into lists
-        events_infor = np.asarray(self.events_infor)
+        events_infor = np.asarray(self.events_infor, dtype=object)
         image_fps = events_infor[:, 0].tolist()
-        ball_position = events_infor[:, 1].tolist()
-        target_events = events_infor[:, 2].tolist()
-        segmentation_fp = events_infor[:, 3].tolist()
+        ball_position_x = events_infor[:, 1].tolist()
+        ball_position_y = events_infor[:, 2].tolist()
+        target_events = events_infor[:, 3].tolist()
+        segmentation_fp = events_infor[:, 4].tolist()
         # Convert all of the data into tensor slices
         image_ds = data.Dataset.from_tensor_slices(image_fps)
-        position_ds = data.Dataset.from_tensor_slices(ball_position)
+        position_x_ds = data.Dataset.from_tensor_slices(ball_position_x)
+        position_y_ds = data.Dataset.from_tensor_slices(ball_position_y)
         mask_ds = data.Dataset.from_tensor_slices(segmentation_fp)
         events_ds = data.Dataset.from_tensor_slices(target_events)
         # Map the associated function to the tensor slices
@@ -85,12 +81,7 @@ class TTNetDataset():
             lambda x: tf.numpy_function(
                 self.parse_masks, inp=[x], Tout=[tf.int8]),
             num_parallel_calls=data.experimental.AUTOTUNE)
-        print("Running position dataset.")
-        position_ds = position_ds.map(
-            lambda x: tf.numpy_function(
-                self.coordinate_adjustment, inp=[x], Tout=tf.int32),
-            num_parallel_calls=data.experimental.AUTOTUNE)
-        ds = data.Dataset.zip((image_ds, position_ds, events_ds, mask_ds))
+        ds = data.Dataset.zip((image_ds, position_x_ds, position_y_ds, events_ds, mask_ds))
         print("Dataset zipped.")
         ds = self.configure_for_performance(ds=ds)
         return ds
@@ -105,6 +96,10 @@ if __name__ == "__main__":
     ttnet_dataset_creator = TTNetDataset(
         events_infor=events_infor,
         org_size=configs.original_image_shape,
-        input_size=configs.processed_image_shape)
+        input_size=configs.processed_image_shape,
+        configs=configs)
 
     ttnet_dataset = ttnet_dataset_creator.get_dataset()
+
+    
+

@@ -50,6 +50,52 @@ def data_split(events_infor, events_labels, configs):
             validation_events_infor, validation_events_labels)
 
 
+def gaussian_distribution(ball_position_gt_x, ball_position_gt_y, configs):
+    """Section 5.1 TTNet Architecture.
+    Utilizes the ball's position as the miu, and average 
+    ball size for that range as the sigma.
+    """
+    mu_x = ball_position_gt_x
+    mu_y = ball_position_gt_y
+    sigma = int(1) # Average std for the ball shape, subject to change
+    frame_width = configs.processed_image_shape[0]
+    frame_height = configs.processed_image_shape[1]
+    # Templates for the distribution
+    template_x = np.arange(frame_width, dtype=np.float32)
+    template_y = np.arange(frame_height, dtype=np.float32)
+    dist_x = 1/(sigma * np.sqrt(2 * np.pi)) * np.exp( - (template_x - mu_x)**2 / (2 * sigma**2))
+    dist_y = 1/(sigma * np.sqrt(2 * np.pi)) * np.exp( - (template_y - mu_y)**2 / (2 * sigma**2))
+    return dist_x, dist_y
+
+def coordinate_adjustment(ball_position, pos_type, configs):
+    """Change the position coordinates of the ball to scale to training."""
+    if pos_type == "x":
+        ball_position = ball_position/(configs.original_image_shape[0]/configs.processed_image_shape[0]) 
+        ball_position = np.asarray(ball_position, dtype=np.int32)
+        return ball_position
+    else:
+        ball_position = ball_position/(configs.original_image_shape[1]/configs.processed_image_shape[1]) 
+        ball_position = np.asarray(ball_position, dtype=np.int32)
+        return ball_position
+
+def gaussian_distribution(ball_position_gt, pos_type, configs):
+    """Section 5.1 TTNet Architecture.
+    Utilizes the ball's position as the miu, and average 
+    ball size for that range as the sigma.
+    """
+    mu = ball_position_gt
+    sigma = int(1) # Average std for the ball shape, subject to change
+    frame_width = configs.processed_image_shape[0] 
+    frame_height = configs.processed_image_shape[1] 
+    if pos_type == "x":
+        template_x = np.arange(frame_width, dtype=np.float32)
+        dist = 1/(sigma * np.sqrt(2 * np.pi)) * np.exp( - (template_x - mu)**2 / (2 * sigma**2))
+        return dist
+    else:
+        template_y = np.arange(frame_height, dtype=np.float32)
+        dist = 1/(sigma * np.sqrt(2 * np.pi)) * np.exp( - (template_y - mu)**2 / (2 * sigma**2))
+        return dist
+
 def data_preparer(configs, dataset_type="training"):
     """Prepare the dataset for TF data."""
     if dataset_type == "training":
@@ -106,10 +152,28 @@ def data_preparer(configs, dataset_type="training"):
                         # {}'.format(event_frame, last_frame))
                         continue
                     ball_position_xy = ball_annos["{}".format(last_frame)]
-                    ball_position_xy = np.array(
-                        [ball_position_xy["x"], ball_position_xy["y"]],
+                    ball_position_x = np.array(
+                        ball_position_xy["x"],
                         dtype=np.int)
-
+                    ball_position_x = coordinate_adjustment(
+                        ball_position=ball_position_x, 
+                        pos_type="x",
+                        configs=configs)
+                    ball_position_x = gaussian_distribution(
+                        ball_position_gt=ball_position_x,
+                        pos_type="x",
+                        configs=configs)
+                    ball_position_y = np.array(
+                        ball_position_xy["y"],
+                        dtype=np.int)
+                    ball_position_y = coordinate_adjustment(
+                        ball_position=ball_position_y, 
+                        pos_type="y",
+                        configs=configs)
+                    ball_position_y = gaussian_distribution(
+                        ball_position_gt=ball_position_y,
+                        pos_type="y",
+                        configs=configs)
                     # if ball_position_xy[0] < 0 or ball_position_xy[1] < 0:
                     # continue
 
@@ -134,7 +198,8 @@ def data_preparer(configs, dataset_type="training"):
                         event_class, frame, event_frame)
                     events_infor.append(
                         [image_paths,
-                         ball_position_xy,
+                         ball_position_x,
+                         ball_position_y,
                          target_events,
                          seg_path])
 

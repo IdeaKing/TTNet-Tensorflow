@@ -18,7 +18,7 @@ def train(train_data, validation_data, configs=configs):
     batch_size = configs.batch_size
     resume_from_checkpoint = configs.resume_training
 
-    if resume_from_checkpoint > 0:
+    if resume_from_checkpoint != 0:
         checkpoint_dir = os.path.join(
             configs.work_dir, "checkpoints", "ttnet.ckpt")
     
@@ -42,28 +42,27 @@ def train(train_data, validation_data, configs=configs):
         configs.processed_image_shape[1],
         configs.num_frames_sequence * 3)
 
-    model = ttnet(dims=model_dims) # 380 x 128 x number of frames
+    model = ttnet(dims=model_dims) # 380 x 128 x (number of frames x 3)
     for epoch in range(resume_from_checkpoint, epochs):
-        for step, (x_images, y_ball_position, y_events, y_mask) in enumerate(
-            train_data):
+        for step, (x_images, y_ball_position_x, 
+            y_ball_position_y, y_events, y_mask) in enumerate(train_data):
             # Training Step
             with tf.GradientTape() as tape:
-                print(np.asarray(x_images).shape)
-                detectionx_logits, detectiony_logits, events_logits, mask_logits = model(
+                detection_x_logits, detection_y_logits, events_logits, mask_logits = model(
                     x_images, training=True)
-                
-                print(y_ball_position)
-                print(detectionx_logits)
-                print(detectiony_logits)
-
                 # Ball detection losses
-                ce_loss = ce_loss_fn.call(detection_logits, y_ball_position)
+                ce_loss_x = ce_loss_fn.call(
+                    detection_x_logits, y_ball_position_x, axis = "x")
+                ce_loss_y = ce_loss_fn.call(
+                    detection_y_logits, y_ball_position_y, axis = "y")
+                ce_loss = ce_loss_x + ce_loss_y
                 # Event detection losses
                 wce_loss = wce_loss_fn.call(events_logits, y_events)
+                print("wce loss type", wce_loss.dtype)
                 # Mask segmentation losses
                 segm_loss = segm_loss_fn.call(mask_logits, y_mask)
                 # Average all three losses
-                avg_loss = (ce_loss + wce_loss + segm_loss)/3 
+                avg_loss = (ce_loss + wce_loss + segm_loss)/3
 
             # Update Gradients
             grads = tape.gradient(
