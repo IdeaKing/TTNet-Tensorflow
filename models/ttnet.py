@@ -93,7 +93,7 @@ def sem_segmentation(inputs):
     dblock4 = dblock4 + inputs[1]
     dblock3 = deconv_block(layer=dblock4, filters=64)
     dblock3 = dblock3 + inputs[0]
-    dblock2 = deconv_block(layer=dblock3, filters=32)
+    dblock2 = deconv_block(layer=dblock3, filters=64)
     tconv1 = Conv2DTranspose(
         filters=32,
         kernel_size=(3, 3),
@@ -103,12 +103,14 @@ def sem_segmentation(inputs):
     conv1 = Conv2D(
         filters=32,
         kernel_size=(3, 3),
-        strides=(2, 2))(relu1)
+        strides=1,
+        padding="same")(relu1)
     relu2 = ReLU()(conv1)
     conv2 = Conv2D(
         filters=3,
         kernel_size=(2, 2),
-        strides=(2, 2),
+        strides=1,
+        padding="valid",
         activation="sigmoid")(relu2)
     return conv2
 

@@ -46,5 +46,8 @@ parser.add_argument(
 parser.add_argument(
     "--processed-image-shape",
     default=(320,128))
+parser.add_argument(
+    "--shards",
+    default=100)
 
 configs = parser.parse_args()

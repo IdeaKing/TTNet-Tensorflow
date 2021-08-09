@@ -49,7 +49,7 @@ class TTNetDataset():
         towardsdatascience.com/what-is-the-best-input-pipeline-to-train-image-
         classification-models-with-tf-keras-eb3fe26d3cc5
         """
-        ds = ds.shuffle(buffer_size=1000)
+        ds = ds.shuffle(buffer_size=self.configs.shards)
         ds = ds.batch(self.configs.batch_size)
         ds = ds.repeat()
         ds = ds.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
@@ -93,6 +93,8 @@ if __name__ == "__main__":
 
     events_infor, events_labels = data_preparer(configs=configs)
 
+    print(len(events_labels))
+
     ttnet_dataset_creator = TTNetDataset(
         events_infor=events_infor,
         org_size=configs.original_image_shape,
@@ -100,6 +102,8 @@ if __name__ == "__main__":
         configs=configs)
 
     ttnet_dataset = ttnet_dataset_creator.get_dataset()
+
+    
 
     
 
