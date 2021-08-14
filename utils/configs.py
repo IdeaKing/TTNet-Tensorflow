@@ -39,6 +39,29 @@ parser.add_argument(
     "--num-frames-sequence",
     type=int,
     default=9)
+parser.add_argument(
+    "--checkpoint-frequency",
+    type=int,
+    default=1)
+# ///////// Testing Info \\\\\\\\\
+parser.add_argument(
+    "--testing-epoch",
+    type=int,
+    default=29,
+    help="The epoch to test.")
+parser.add_argument(
+    "--save-outputs",
+    type=bool,
+    default=True,
+    help="Whether or not to save the outputs.")
+# ///////// Metrics Info \\\\\\\\\
+parser.add_argument(
+    "--threshold-spce",
+    type=float,
+    default=0.25)
+parser.add_argument(
+    "--iou-smooth-rate",
+    default=1e-6)
 # ///////// Image Info \\\\\\\\\
 parser.add_argument(
     "--original-image-shape",
@@ -47,7 +70,10 @@ parser.add_argument(
     "--processed-image-shape",
     default=(320,128))
 parser.add_argument(
-    "--shards",
+    "--shuffle_size",
     default=100)
+parser.add_argument(
+    "--buffer_size",
+    default=16)
 
 configs = parser.parse_args()

@@ -1,0 +1,73 @@
+Running mask dataset.
+Dataset zipped.
+Creating the validation dataset.
+Running image dataset.
+Running mask dataset.
+Dataset zipped.
+Begining training.
+2021-08-12 22:20:13.909544: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library cublas64_10.dll
+2021-08-12 22:20:14.902129: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library cudnn64_7.dll
+2021-08-12 22:20:18.252014: W tensorflow/stream_executor/gpu/redzone_allocator.cc:314] Internal: Invoking GPU asm compilation is supported on Cuda non-Windows platforms only
+Relying on driver to perform ptx compilation.
+Modify $PATH to customize ptxas location.
+This message will be only logged once.
+Train Epoch: 1 |████████████████████| 100.0% Train RMSE 0.8877 Train PCE: 3.0 Train SPCE: 0.0 Train IOU: 0.999
+Checpoints saved to:  test-001\checkpoints\ttnet-0.ckpttion RMSE 0.911 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 0.999
+Train Epoch: 2 |████████████████████| 100.0% Train RMSE 0.9126 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-1.ckpttion RMSE 0.917 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 3 |████████████████████| 100.0% Train RMSE 0.916 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-2.ckpttion RMSE 0.9146 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 4 |████████████████████| 100.0% Train RMSE 0.9175 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-3.ckpttion RMSE 0.923 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 5 |████████████████████| 100.0% Train RMSE 0.918 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-4.ckpttion RMSE 0.9204 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 6 |████████████████████| 100.0% Train RMSE 0.9214 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-5.ckpttion RMSE 0.9243 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 7 |████████████████████| 100.0% Train RMSE 0.9233 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-6.ckpttion RMSE 0.924 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 8 |████████████████████| 100.0% Train RMSE 0.9233 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-7.ckpttion RMSE 0.9214 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 9 |████████████████████| 100.0% Train RMSE 0.9233 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-8.ckpttion RMSE 0.924 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 10 |████████████████████| 100.0% Train RMSE 0.9224 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-9.ckptation RMSE 0.9224 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 11 |████████████████████| 100.0% Train RMSE 0.9224 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-10.ckpttion RMSE 0.922 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 12 |████████████████████| 100.0% Train RMSE 0.923 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-11.ckpttion RMSE 0.9224 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 13 |████████████████████| 100.0% Train RMSE 0.923 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-12.ckpttion RMSE 0.9214 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 14 |████████████████████| 100.0% Train RMSE 0.9233 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-13.ckpttion RMSE 0.9224 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 15 |████████████████████| 100.0% Train RMSE 0.9214 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-14.ckpttion RMSE 0.922 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 16 |████████████████████| 100.0% Train RMSE 0.9214 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-15.ckpttion RMSE 0.923 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 17 |████████████████████| 100.0% Train RMSE 0.922 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-16.ckpttion RMSE 0.924 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 18 |████████████████████| 100.0% Train RMSE 0.9224 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-17.ckpttion RMSE 0.9253 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 19 |████████████████████| 100.0% Train RMSE 0.9233 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-18.ckpttion RMSE 0.927 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 20 |████████████████████| 100.0% Train RMSE 0.924 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-19.ckpttion RMSE 0.923 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 21 |████████████████████| 100.0% Train RMSE 0.922 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-20.ckpttion RMSE 0.9194 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 22 |████████████████████| 100.0% Train RMSE 0.918 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-21.ckpttion RMSE 0.9155 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 23 |████████████████████| 100.0% Train RMSE 0.9146 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-22.ckpttion RMSE 0.914 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 24 |████████████████████| 100.0% Train RMSE 0.9146 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 1.0
+Checpoints saved to:  test-001\checkpoints\ttnet-23.ckpttion RMSE 0.9175 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 1.0
+Train Epoch: 25 |████████████████████| 100.0% Train RMSE 0.9146 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 0.9995
+Checpoints saved to:  test-001\checkpoints\ttnet-24.ckpttion RMSE 0.9136 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 0.9995
+Train Epoch: 26 |████████████████████| 100.0% Train RMSE 0.9146 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 0.9995
+Checpoints saved to:  test-001\checkpoints\ttnet-25.ckpttion RMSE 0.9136 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 0.9995
+Train Epoch: 27 |████████████████████| 100.0% Train RMSE 0.9146 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 0.9995
+Checpoints saved to:  test-001\checkpoints\ttnet-26.ckpttion RMSE 0.914 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 0.9995
+Train Epoch: 28 |████████████████████| 100.0% Train RMSE 0.9146 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 0.9995
+Checpoints saved to:  test-001\checkpoints\ttnet-27.ckpttion RMSE 0.9155 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 0.9995
+Train Epoch: 29 |████████████████████| 100.0% Train RMSE 0.9146 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 0.9995
+Checpoints saved to:  test-001\checkpoints\ttnet-28.ckpttion RMSE 0.9155 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 0.9995
+Train Epoch: 30 |████████████████████| 100.0% Train RMSE 0.914 Train PCE: 0.0 Train SPCE: 0.0 Train IOU: 0.9995
+Checpoints saved to:  test-001\checkpoints\ttnet-29.ckpttion RMSE 0.914 Validation PCE: 0.0 Validation SPCE: 0.0 Validation IOU: 0.9995

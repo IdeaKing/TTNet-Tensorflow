@@ -1,6 +1,4 @@
 # Created by Thomas Chia
-# Large portions of code were based on 
-# https://github.com/maudzung/TTNet-Realtime-for-Table-Tennis-Pytorch
 # Paper by https://arxiv.org/pdf/2004.09927.pdf
 
 import os
@@ -11,6 +9,21 @@ from tensorflow.keras.optimizers import Adam
 import numpy as np
 
 from utils.configs import configs
+
+
+def checkpoints_cb(epoch, model, configs):
+    """Checkpoint callback for training the model."""
+    frequency = configs.checkpoint_frequency
+    checkpoint_dir = os.path.join(
+        configs.work_dir, 
+        "checkpoints",
+        f"ttnet-{epoch+1}.ckpt")
+
+    if (epoch % frequency) == 0:
+        model.save_weights(checkpoint_dir)
+        print()
+        print("Checkpoints saved to: ", checkpoint_dir)
+    
 
 def scheduler(epoch, lr=1e-3):
     halving_rate = int(epoch/3) + 1
@@ -32,7 +45,7 @@ if os.path.isdir(tensorboard_logdir):
 else:
     os.makedirs(tensorboard_logdir)
 
-tb_callback = TensorBoard(log_dir=tensorboard_logdir)
+tensorboard_cb = TensorBoard(log_dir=tensorboard_logdir)
 
 
 def printProgressBar(
@@ -40,9 +53,10 @@ def printProgressBar(
     total, 
     run_type,
     epoch = '', 
-    ce = '', 
-    wce = '', 
-    dicebce = '',):
+    rmse = '',
+    pce = '', 
+    spce = '', 
+    iou = '',):
     """Training Progress Bar"""
     decimals = 1
     length = 20
@@ -51,9 +65,10 @@ def printProgressBar(
 
     # Convert tensor values into just float values
     try:
-        ce = str(ce.numpy().astype(np.float16))
-        wce = str(wce.numpy().astype(np.float16))
-        dicebce = str(dicebce.numpy().astype(np.float16))
+        pce = str(pce.numpy().astype(np.float16))
+        spce = str(spce.numpy().astype(np.float16))
+        rmse = str(rmse.numpy().astype(np.float16))
+        iou = str(iou.numpy().astype(np.float16))
     except:
         pass
 
@@ -62,10 +77,11 @@ def printProgressBar(
     filledLength = int(length * iter // total)
     bar = fill * filledLength + '-' * (length - filledLength)
 
-    print(f'\r {run_type} Epoch: {epoch} |{bar}| {percent}%' \
-          f' {run_type} CE Loss: {ce}' \
-          f' {run_type} Weighted CE Loss: {wce}' \
-          f' {run_type} DICE-BCE Loss: {dicebce}             ', 
+    print(f'\r{run_type} Epoch: {epoch} |{bar}| {percent}%' \
+          f' {run_type} RMSE {rmse}' \
+          f' {run_type} PCE: {pce}' \
+          f' {run_type} SPCE: {spce}' \
+          f' {run_type} IOU: {iou}             ', 
         end = '\r')
 
     # Print New Line on Complete

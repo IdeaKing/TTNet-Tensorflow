@@ -106,105 +106,114 @@ def data_preparer(configs, dataset_type="training"):
         images_dir = os.path.join(
             configs.data_dir, dataset_type, "images")
         games_list = os.listdir(images_dir)
+    else:
+        num_frames_from_event = int(
+            (configs.num_frames_sequence - 1) / 2)
+        annos_dir = os.path.join(
+            configs.data_dir, dataset_type, "annotations")
+        images_dir = os.path.join(
+            configs.data_dir, dataset_type, "images")
+        games_list = os.listdir(images_dir)
+        
+    events_infor = []
+    events_labels = []
 
-        events_infor = []
-        events_labels = []
-
-        # Parse through each game folder.
-        for game in games_list:
-            ball_annos_path = os.path.join(
-                annos_dir, game, "ball_markup.json")
-            events_annos_path = os.path.join(
-                annos_dir, game, "events_markup.json")
-            # Load ball annotations
-            json_ball = open(ball_annos_path)
-            ball_annos = json.load(json_ball)
-            # Load events annotations
-            json_events = open(events_annos_path)
-            events_annos = json.load(json_events)
-            # Parse through each even in the JSON file.
-            for event_frame, event_type in events_annos.items():
-                event_frame = int(event_frame)
-                # Get frames if event is important
-                if event_type != "empty_event":
-                    smooth_frames = [
-                        idx for idx in range(
-                            event_frame - num_frames_from_event,
-                            event_frame + num_frames_from_event + 1)]
-                for frame in smooth_frames:
-                    sub_smooth_frames = [
-                        idx for idx in range(
-                            frame - num_frames_from_event,
-                            frame + num_frames_from_event + 1)]
-                    # Add the image paths into a list.
-                    image_paths = []
-                    for sub_smooth_idx in sub_smooth_frames:
-                        image_path = os.path.join(
-                            images_dir,
-                            game,
-                            "img_{:06d}.jpg".format(sub_smooth_idx))
-                        image_paths.append(image_path)
-                    # Get the last frame then append the ball position
-                    last_frame = frame + num_frames_from_event
-                    if '{}'.format(last_frame) not in ball_annos.keys():
-                        # print('smooth_idx: {} -
-                        # no ball position for the frame idx
-                        # {}'.format(event_frame, last_frame))
-                        continue
-                    ball_position_xy = ball_annos["{}".format(last_frame)]
-                    ball_position_x = np.array(
-                        ball_position_xy["x"],
-                        dtype=np.int)
-                    ball_position_x = coordinate_adjustment(
-                        ball_position=ball_position_x, 
-                        pos_type="x",
-                        configs=configs)
-                    ball_position_x = gaussian_distribution(
-                        ball_position_gt=ball_position_x,
-                        pos_type="x",
-                        configs=configs)
-                    ball_position_y = np.array(
-                        ball_position_xy["y"],
-                        dtype=np.int)
-                    ball_position_y = coordinate_adjustment(
-                        ball_position=ball_position_y, 
-                        pos_type="y",
-                        configs=configs)
-                    ball_position_y = gaussian_distribution(
-                        ball_position_gt=ball_position_y,
-                        pos_type="y",
-                        configs=configs)
-                    # if ball_position_xy[0] < 0 or ball_position_xy[1] < 0:
-                    # continue
-
-                    # Get the path to the segmentation frame from last frame
-                    seg_path = os.path.join(
-                        annos_dir,
+    # Parse through each game folder.
+    for game in games_list:
+        ball_annos_path = os.path.join(
+            annos_dir, game, "ball_markup.json")
+        events_annos_path = os.path.join(
+            annos_dir, game, "events_markup.json")
+        # Load ball annotations
+        json_ball = open(ball_annos_path)
+        ball_annos = json.load(json_ball)
+        # Load events annotations
+        json_events = open(events_annos_path)
+        events_annos = json.load(json_events)
+        # Parse through each even in the JSON file.
+        for event_frame, event_type in events_annos.items():
+            event_frame = int(event_frame)
+            # Get frames if event is important
+            if event_type != "empty_event":
+                smooth_frames = [
+                    idx for idx in range(
+                        event_frame - num_frames_from_event,
+                        event_frame + num_frames_from_event + 1)]
+            for frame in smooth_frames:
+                sub_smooth_frames = [
+                    idx for idx in range(
+                        frame - num_frames_from_event,
+                        frame + num_frames_from_event + 1)]
+                # Add the image paths into a list.
+                image_paths = []
+                for sub_smooth_idx in sub_smooth_frames:
+                    image_path = os.path.join(
+                        images_dir,
                         game,
-                        "segmentation_masks", "{}.png".format(last_frame))
-                    if not os.path.isfile(seg_path):
-                        # print("smooth_idx: {} -
-                        # The segmentation path
-                        # {} is invalid".format(frame, seg_path))
-                        continue
-                    events_dict = events_dict = {
-                        "bounce": 0,
-                        "net": 1,
-                        "empty_event": 2}
+                        "img_{:06d}.jpg".format(sub_smooth_idx))
+                    image_paths.append(image_path)
+                # Get the last frame then append the ball position
+                last_frame = frame + num_frames_from_event
+                if '{}'.format(last_frame) not in ball_annos.keys():
+                    # print('smooth_idx: {} -
+                    # no ball position for the frame idx
+                    # {}'.format(event_frame, last_frame))
+                    continue
+                ball_position_xy = ball_annos["{}".format(last_frame)]
+                ball_position_x = np.array(
+                    ball_position_xy["x"],
+                    dtype=np.int)
+                ball_position_x = coordinate_adjustment(
+                    ball_position=ball_position_x, 
+                    pos_type="x",
+                    configs=configs)
+                ball_position_x = gaussian_distribution(
+                    ball_position_gt=ball_position_x,
+                    pos_type="x",
+                    configs=configs)
+                ball_position_y = np.array(
+                    ball_position_xy["y"],
+                    dtype=np.int)
+                ball_position_y = coordinate_adjustment(
+                    ball_position=ball_position_y, 
+                    pos_type="y",
+                    configs=configs)
+                ball_position_y = gaussian_distribution(
+                    ball_position_gt=ball_position_y,
+                    pos_type="y",
+                    configs=configs)
+                # if ball_position_xy[0] < 0 or ball_position_xy[1] < 0:
+                # continue
 
-                    event_class = events_dict[event_type]
+                # Get the path to the segmentation frame from last frame
+                seg_path = os.path.join(
+                    annos_dir,
+                    game,
+                    "segmentation_masks", "{}.png".format(last_frame))
+                if not os.path.isfile(seg_path):
+                    # print("smooth_idx: {} -
+                    # The segmentation path
+                    # {} is invalid".format(frame, seg_path))
+                    continue
+                events_dict = events_dict = {
+                    "bounce": 0,
+                    "net": 1,
+                    "empty_event": 2}
 
-                    target_events = smooth_event_labelling(
-                        event_class, frame, event_frame)
-                    events_infor.append(
-                        [image_paths,
-                         ball_position_x,
-                         ball_position_y,
-                         target_events,
-                         seg_path])
+                event_class = events_dict[event_type]
 
-                    if (target_events[0] == 0) and (target_events[1] == 0):
-                        event_class = 2
-                    events_labels.append(event_class)
+                target_events = smooth_event_labelling(
+                    event_class, frame, event_frame)
+                events_infor.append(
+                    [image_paths,
+                        ball_position_x,
+                        ball_position_y,
+                        target_events,
+                        seg_path])
 
+                if (target_events[0] == 0) and (target_events[1] == 0):
+                    event_class = 2
+                events_labels.append(event_class)
+    
+        
     return events_infor, events_labels

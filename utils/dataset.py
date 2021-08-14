@@ -9,7 +9,7 @@ from tensorflow import data
 
 
 class TTNetDataset():
-    def __init__(self, events_infor, org_size, input_size, configs):
+    def __init__(self, events_infor, org_size, input_size, configs, dataset_type="training"):
         self.events_infor = events_infor
         self.w_org = org_size[0]
         self.h_org = org_size[1]
@@ -18,6 +18,7 @@ class TTNetDataset():
         self.w_resize_ratio = self.w_org / self.w_input
         self.h_resize_ratio = self.h_org / self.h_input
         self.configs = configs
+        self.type = dataset_type
 
     def parse_images(self, images: np.ndarray):
         """Open and perform operations on all images.
@@ -41,6 +42,7 @@ class TTNetDataset():
         """Open and perform operations on the masks."""
         mask = cv2.imread(tf.compat.as_str_any(mask_path))
         mask = cv2.cvtColor(mask, cv2.COLOR_BGR2RGB)
+        mask[mask < 0] = 0
         mask = np.asarray(mask).astype(np.int8)
         return mask
 
@@ -49,10 +51,10 @@ class TTNetDataset():
         towardsdatascience.com/what-is-the-best-input-pipeline-to-train-image-
         classification-models-with-tf-keras-eb3fe26d3cc5
         """
-        ds = ds.shuffle(buffer_size=self.configs.shards)
+        ds = ds.shuffle(buffer_size=self.configs.shuffle_size)
         ds = ds.batch(self.configs.batch_size)
-        ds = ds.repeat()
-        ds = ds.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+        # ds = ds.repeat()
+        ds = ds.prefetch(buffer_size=self.configs.buffer_size) # tf.data.experimental.AUTOTUNE)
         return ds
 
     def get_dataset(self):
@@ -83,17 +85,19 @@ class TTNetDataset():
             num_parallel_calls=data.experimental.AUTOTUNE)
         ds = data.Dataset.zip((image_ds, position_x_ds, position_y_ds, events_ds, mask_ds))
         print("Dataset zipped.")
-        ds = self.configure_for_performance(ds=ds)
+        if self.type=="training":
+            ds = self.configure_for_performance(ds)
+        else:
+            ds = ds.prefetch(buffer_size=self.configs.buffer_size).batch(1)
         return ds
         
 if __name__ == "__main__":
     # Test to see if dataset creation was successful
     from data_utils import *
     from configs import configs
+    import cv2
 
     events_infor, events_labels = data_preparer(configs=configs)
-
-    print(len(events_labels))
 
     ttnet_dataset_creator = TTNetDataset(
         events_infor=events_infor,
@@ -102,7 +106,7 @@ if __name__ == "__main__":
         configs=configs)
 
     ttnet_dataset = ttnet_dataset_creator.get_dataset()
-
+    
     
 
     

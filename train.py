@@ -1,8 +1,7 @@
-# Create custom metrics...
-
 import os
 
 import tensorflow as tf
+import numpy as np
 
 from models.ttnet import ttnet
 from utils.utils import *
@@ -10,98 +9,155 @@ from utils.configs import configs
 from utils.losses import *
 from utils.data_utils import data_preparer, data_split
 from utils.dataset import TTNetDataset
-from utils.evaluation_utils import *
+from utils.metrics import *
 
 
-def train(train_data, validation_data, t_events_infor, configs=configs):
+def train(train_data, validation_data, t_size, v_size, configs=configs):
+    """The training loop for TTNet."""
     # Common Model Parameters
     epochs = configs.num_epochs
     batch_size = configs.batch_size
     resume_from_checkpoint = configs.resume_training
     width = configs.processed_image_shape[0]
     height = configs.processed_image_shape[1]
-    step_size = t_events_infor.shape[0]
-
-    if resume_from_checkpoint != 0:
-        checkpoint_dir = os.path.join(
-            configs.work_dir, "checkpoints", "ttnet.ckpt")
+    step_size = int(t_size.shape[0]/batch_size)
+    val_step_size = int(v_size.shape[0]/batch_size)
 
     # Initialize Losses
     ce_loss_fn = CrossEntropyTT(w=width, h=height)
     wce_loss_fn = WeightedCrossEntropyTT()
 
     # Initialize Metrics
-    mIOU = MeanIoU(num_classes=3)
+    RMSE = tf.keras.metrics.RootMeanSquaredError(name="RMSE")
+    PCE = PercentCorrectEvents()
+    SPCE = SmoothPercentCorrectEvents(configs=configs)
+    IOU = IntersectionOfUnion(configs=configs)
 
     # Create the model here
     model_dims = (
-        configs.processed_image_shape[0],
-        configs.processed_image_shape[1],
+        width,
+        height,
         configs.num_frames_sequence * 3)
     model = ttnet(dims=model_dims) # 380 x 128 x (number of frames x 3)
-    
+
+    # Load from checkpoints if needed
+    if resume_from_checkpoint != 0:
+        checkpoint_dir = os.path.join(
+            configs.work_dir, 
+            "checkpoints", 
+            f"ttnet-{resume_from_checkpoint}.ckpt")
+        model.load_weights(checkpoint_dir)
+
     # Multiloss training loop
     # https://stackoverflow.com/questions/59690188/
     # https://www.youtube.com/watch?v=KrS94hG4VU0
     for epoch in range(resume_from_checkpoint, epochs):
-        # Initiate the training progress bar
-        printProgressBar(
-            iter=0, 
-            total=step_size,
-            run_type="Train")
         for step, (x_images, y_ball_position_x, 
             y_ball_position_y, y_events, y_mask) in enumerate(train_data):
             # Training Step
             with tf.GradientTape() as tape:
-                detection_x_logits, detection_y_logits, events_logits, mask_logits = model(
-                    x_images, training=True)
+                # Train the model
+                (detection_x_logits, detection_y_logits, 
+                    events_logits, mask_logits) = model(
+                        x_images, training=True)
                 # Ball detection losses
                 ce_loss_x = ce_loss_fn.call(
-                    detection_x_logits, y_ball_position_x, axis = "x")
+                    y_ball_position_x, detection_x_logits, axis = "x")
                 ce_loss_y = ce_loss_fn.call(
-                    detection_y_logits, y_ball_position_y, axis = "y")
+                    y_ball_position_y, detection_y_logits, axis = "y")
                 ce_loss = ce_loss_x + ce_loss_y
                 # Event detection losses
-                wce_loss = wce_loss_fn.call(events_logits, y_events)
+                wce_loss = wce_loss_fn.call(y_events, events_logits)
                 # Mask segmentation losses
-                segm_loss = SegmDICEBCE(mask_logits, y_mask)
+                segm_loss = SegmDICEBCE(y_mask, mask_logits)
 
             # Update Gradients
             grads = tape.gradient(
                 [ce_loss, wce_loss, segm_loss], model.trainable_variables)
             adam_optimizer.apply_gradients(
                 zip(grads, model.trainable_variables))
+
+            # Training Metric Update
+            RMSE.update_state(
+                y_ball_position_x, detection_x_logits)
+            RMSE.update_state(
+                y_ball_position_y, detection_y_logits)
+            PCE.update_state(
+                y_events, events_logits)
+            SPCE.update_state(
+                y_events, events_logits)
+            IOU.update_state(
+                y_mask, mask_logits)
+
             # Update the training progess bar
             printProgressBar(
                 iter=step,
                 total=step_size,
                 run_type="Train",
                 epoch=epoch+1,
-                ce=ce_loss,
-                wce=wce_loss,
-                dicebce=segm_loss)
-            # Training Metric Update    
-            # training_iou_metric = mIOU.update_state(y_true=y_mask, y_pred=mask_logits)
+                rmse=RMSE.result(),
+                pce=PCE.result(),
+                spce=SPCE.result(),
+                iou=IOU.result())
+
+        # Reset the training metrics
+        RMSE.reset_states()
+        PCE.reset_states()
+        SPCE.reset_states()
+        IOU.reset_states()
 
         # Validation Step
-        for step, (val_images, val_ball_position_x, val_ball_position_y, val_events, val_mask) in enumerate(
+        for step, (val_images, val_ball_position_x, 
+            val_ball_position_y, val_events, val_mask) in enumerate(
             validation_data):
-            val_det_x_logits, val_det_y_logits, val_events_logits, val_events_logits, val_mask_logits = model(
+            # Run the Model
+            (val_det_x_logits, val_det_y_logits, 
+                val_events_logits, val_mask_logits) = model(
                     val_images, training=True)
             # Ball detection losses
             ce_loss_x = ce_loss_fn.call(
-                val_det_x_logits, val_ball_position_x, axis = "x")
+                val_ball_position_x, val_det_x_logits, axis = "x")
             ce_loss_y = ce_loss_fn.call(
-                val_det_y_logits, val_ball_position_y, axis = "y")
+                val_ball_position_y, val_det_y_logits, axis = "y")
             ce_loss = ce_loss_x + ce_loss_y
             # Event detection losses
-            wce_loss = wce_loss_fn.call(val_events_logits, val_events)
+            wce_loss = wce_loss_fn.call(val_events, val_events_logits)
             # Mask segmentation losses
-            segm_loss = SegmDICEBCE(val_mask_logits, val_mask)    
+            segm_loss = SegmDICEBCE(val_mask, val_mask_logits)    
+            
+            # Validation metric update
+            RMSE.update_state(
+                y_ball_position_x, detection_x_logits)
+            RMSE.update_state(
+                y_ball_position_y, detection_y_logits)
+            PCE.update_state(
+                y_events, events_logits)
+            SPCE.update_state(
+                y_events, events_logits)
+            IOU.update_state(
+                y_mask, np.array(mask_logits))
 
-        tb_callback.set_model(model)
+            # Update the validation progess bar
+            printProgressBar(
+                iter=step,
+                total=val_step_size,
+                run_type="Validation",
+                epoch=epoch+1,
+                rmse=RMSE.result(),
+                pce=PCE.result(),
+                spce=SPCE.result(),
+                iou=IOU.result())
 
+        # Reset the validation metrics
+        RMSE.reset_states()
+        PCE.reset_states()
+        SPCE.reset_states()
+        IOU.reset_states()
 
+        # Apply the callbacks
+        tensorboard_cb.set_model(model)
+        checkpoints_cb(epoch, model, configs)
+        
 if __name__ == "__main__":
     tf.config.run_functions_eagerly(True)
     # Get and prepare the data
@@ -132,6 +188,7 @@ if __name__ == "__main__":
     train(
         train_data=ttnet_dataset,
         validation_data=validation_dataset,
-        t_events_infor=events_infor,
+        t_size=events_infor,
+        v_size=v_events_infor,
         configs=configs)
     
