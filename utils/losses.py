@@ -4,9 +4,9 @@
 
 import numpy as np
 # from numpy import log, sum
-from tensorflow import convert_to_tensor, cast, float32, reduce_sum
+from tensorflow import convert_to_tensor, cast, float32, reduce_sum, squeeze
 from tensorflow.keras.losses import Loss, binary_crossentropy
-from tensorflow.keras.backend import log, sum, flatten
+from tensorflow.keras.backend import log, sum, flatten, mean
 
 epsilon = 1e-07
 
@@ -17,13 +17,11 @@ class CrossEntropyTT(Loss):
         self.w = w
         self.h = h
 
-    def call(self, targets, logits, axis):
-        if axis == "x":
-            loss_ball = - sum(targets*log(logits + epsilon)) / self.w
-            return loss_ball
-        else:
-            loss_ball = - sum(targets*log(logits + epsilon)) / self.h
-            return loss_ball
+    def call(self, targets_x, logits_x, targets_y, logits_y):
+        loss_ball_x = - mean(targets_x * log(logits_x + epsilon) + (1 - targets_x) * log(1 - logits_x + epsilon))
+        loss_ball_y = - mean(targets_y * log(logits_y + epsilon) + (1 - targets_y) * log(1 - logits_y + epsilon))
+
+        return loss_ball_x + loss_ball_y
 
 class WeightedCrossEntropyTT(Loss):
     """The events spotting loss function.

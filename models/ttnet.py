@@ -50,12 +50,12 @@ def ball_detection(input, dropout):
     fc2_x = Dense(units=640, activation="linear")(drop4)
     relu3_x = ReLU()(fc2_x)
     drop5_x = Dropout(rate=dropout)(relu3_x)
-    fc3_x = Dense(units=320, activation="sigmoid")(drop5_x)
+    fc3_x = Dense(units=640, activation="sigmoid")(drop5_x)
     # Swallow Tail Shape Y
     fc2_y = Dense(units=256, activation="linear")(drop4)
     relu3_y = ReLU()(fc2_y)
     drop5_y = Dropout(rate=dropout)(relu3_y)
-    fc3_y = Dense(units=128, activation="sigmoid")(drop5_y)
+    fc3_y = Dense(units=256, activation="sigmoid")(drop5_y)
     return fc3_x, fc3_y, block2, block3, block4, block5, block6
 
 
@@ -134,17 +134,24 @@ def event_spotting(input, dropout):
     return fc2
 
 
-def ttnet(dims, dropout=0.1):
+def ttnet(dims, dropout=0.1, ball_detection_stage=False):
     """TTNet Model.
     Notes:
         Ball detection stage is a requirement.
     """
-    input = Input(shape=(dims[0], dims[1], dims[2]))
-    detection_x, detection_y, block2, block3, block4, block5, block6 = ball_detection(
-        input=input, dropout=dropout)
-    mask = sem_segmentation(inputs=[block2, block3, block4, block5])
-    events = event_spotting(input=block6, dropout=dropout)
-    model = Model(inputs=[input], outputs=[detection_x, detection_y, events, mask])
+
+    if ball_detection_stage==True:
+        input = Input(shape=(dims[0], dims[1], dims[2]))
+        detection_x, detection_y, block2, block3, block4, block5, block6 = ball_detection(
+            input=input, dropout=dropout)
+        model = Model(inputs=[input], outputs=[detection_x, detection_y])
+    else:
+        input = Input(shape=(dims[0], dims[1], dims[2]))
+        detection_x, detection_y, block2, block3, block4, block5, block6 = ball_detection(
+            input=input, dropout=dropout)
+        mask = sem_segmentation(inputs=[block2, block3, block4, block5])
+        events = event_spotting(input=block6, dropout=dropout)
+        model = Model(inputs=[input], outputs=[detection_x, detection_y, events, mask])
 
     return model
 
@@ -162,5 +169,5 @@ if __name__ == "__main__":
     policy = tf.keras.mixed_precision.experimental.Policy('mixed_float16')
     tf.keras.mixed_precision.experimental.set_policy(policy)
 
-    model = ttnet(dims=(320, 128, 27), dropout=.2)
+    model = ttnet(dims=(320, 128, 27), dropout=.2, ball_detection_stage=True)
     model.summary()

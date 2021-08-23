@@ -50,6 +50,34 @@ def data_split(events_infor, events_labels, configs):
             validation_events_infor, validation_events_labels)
 
 
+def ball_position(x_logits, y_logits, configs):
+    """Gets the coordinates of the ball position."""
+    x = np.array(x_logits, dtype=np.float32)[0]
+    y = np.array(y_logits, dtype=np.float32)[0]
+
+
+    """
+    print("this is x----")
+    print(x)
+
+    print("this is y----")
+    print(y)
+
+    print("this is shapoe x----")
+    print(x.shape)
+
+    print("this is shapoe y")
+    print(y.shape)
+    """
+    scaled_x = np.argmax(x) #  * configs.original_image_shape[0])
+    scaled_y = np.argmax(y) #  * configs.original_image_shape[1])
+
+    # print("scaled x", scaled_x)
+    # print("scaled y", scaled_y)
+
+    return scaled_x, scaled_y
+
+
 def gaussian_distribution(ball_position_gt_x, ball_position_gt_y, configs):
     """Section 5.1 TTNet Architecture.
     Utilizes the ball's position as the miu, and average 
@@ -78,11 +106,12 @@ def coordinate_adjustment(ball_position, pos_type, configs):
         ball_position = np.asarray(ball_position, dtype=np.int32)
         return ball_position
 
+"""
 def gaussian_distribution(ball_position_gt, pos_type, configs):
-    """Section 5.1 TTNet Architecture.
+    """'''Section 5.1 TTNet Architecture.
     Utilizes the ball's position as the miu, and average 
     ball size for that range as the sigma.
-    """
+    '''"""
     mu = ball_position_gt
     sigma = int(1) # Average std for the ball shape, subject to change
     frame_width = configs.processed_image_shape[0] 
@@ -95,7 +124,7 @@ def gaussian_distribution(ball_position_gt, pos_type, configs):
         template_y = np.arange(frame_height, dtype=np.float32)
         dist = 1/(sigma * np.sqrt(2 * np.pi)) * np.exp( - (template_y - mu)**2 / (2 * sigma**2))
         return dist
-
+"""
 def data_preparer(configs, dataset_type="training"):
     """Prepare the dataset for TF data."""
     if dataset_type == "training":
@@ -167,10 +196,6 @@ def data_preparer(configs, dataset_type="training"):
                     ball_position=ball_position_x, 
                     pos_type="x",
                     configs=configs)
-                ball_position_x = gaussian_distribution(
-                    ball_position_gt=ball_position_x,
-                    pos_type="x",
-                    configs=configs)
                 ball_position_y = np.array(
                     ball_position_xy["y"],
                     dtype=np.int)
@@ -178,9 +203,9 @@ def data_preparer(configs, dataset_type="training"):
                     ball_position=ball_position_y, 
                     pos_type="y",
                     configs=configs)
-                ball_position_y = gaussian_distribution(
-                    ball_position_gt=ball_position_y,
-                    pos_type="y",
+                ball_position_x, ball_position_y = gaussian_distribution(
+                    ball_position_gt_x=ball_position_x,
+                    ball_position_gt_y=ball_position_y,
                     configs=configs)
                 # if ball_position_xy[0] < 0 or ball_position_xy[1] < 0:
                 # continue
@@ -217,3 +242,180 @@ def data_preparer(configs, dataset_type="training"):
     
         
     return events_infor, events_labels
+
+def data_preparer_test(configs, dataset_type="training"):
+    """Prepare the dataset for TF data."""
+    if dataset_type == "training":
+        num_frames_from_event = int(
+            (configs.num_frames_sequence - 1) / 2)
+        annos_dir = os.path.join(
+            configs.data_dir, dataset_type, "annotations")
+        images_dir = os.path.join(
+            configs.data_dir, dataset_type, "images")
+        games_list = os.listdir(images_dir)
+    else:
+        num_frames_from_event = int(
+            (configs.num_frames_sequence - 1) / 2)
+        annos_dir = os.path.join(
+            configs.data_dir, dataset_type, "annotations")
+        images_dir = os.path.join(
+            configs.data_dir, dataset_type, "images")
+        games_list = os.listdir(images_dir)
+        
+    events_infor = []
+    events_labels = []
+
+    # Parse through each game folder.
+    for game in games_list:
+        ball_annos_path = os.path.join(
+            annos_dir, game, "ball_markup.json")
+        events_annos_path = os.path.join(
+            annos_dir, game, "events_markup.json")
+        # Load ball annotations
+        json_ball = open(ball_annos_path)
+        ball_annos = json.load(json_ball)
+        # Load events annotations
+        json_events = open(events_annos_path)
+        events_annos = json.load(json_events)
+        # Parse through each even in the JSON file.
+        for event_frame, event_type in events_annos.items():
+            event_frame = int(event_frame)
+            # Get frames if event is important
+            if event_type != "empty_event":
+                smooth_frames = [
+                    idx for idx in range(
+                        event_frame - num_frames_from_event,
+                        event_frame + num_frames_from_event + 1)]
+            for frame in smooth_frames:
+                sub_smooth_frames = [
+                    idx for idx in range(
+                        frame - num_frames_from_event,
+                        frame + num_frames_from_event + 1)]
+                # Add the image paths into a list.
+                image_paths = []
+                for sub_smooth_idx in sub_smooth_frames:
+                    image_path = os.path.join(
+                        images_dir,
+                        game,
+                        "img_{:06d}.jpg".format(sub_smooth_idx))
+                    image_paths.append(image_path)
+                # Get the last frame then append the ball position
+                last_frame = frame + num_frames_from_event
+                if '{}'.format(last_frame) not in ball_annos.keys():
+                    # print('smooth_idx: {} -
+                    # no ball position for the frame idx
+                    # {}'.format(event_frame, last_frame))
+                    continue
+                ball_position_xy = ball_annos["{}".format(last_frame)]
+                ball_position_x = np.array(
+                    ball_position_xy["x"],
+                    dtype=np.int)
+                ball_position_x = coordinate_adjustment(
+                    ball_position=ball_position_x, 
+                    pos_type="x",
+                    configs=configs)
+                # ball_position_x = gaussian_distribution(
+                    # ball_position_gt=ball_position_x,
+                    # pos_type="x",
+                    # configs=configs)
+                ball_position_y = np.array(
+                    ball_position_xy["y"],
+                    dtype=np.int)
+                ball_position_y = coordinate_adjustment(
+                    ball_position=ball_position_y, 
+                    pos_type="y",
+                    configs=configs)
+                # ball_position_y = gaussian_distribution(
+                    # ball_position_gt=ball_position_y,
+                    # pos_type="y",
+                    # configs=configs)
+
+                print("ball pos x", ball_position_x)
+                print("ball pos y", ball_position_y)
+                
+                ball_position_x, ball_position_y = gaussian_distribution(
+                    ball_position_gt_x=ball_position_x,
+                    ball_position_gt_y=ball_position_y,
+                    configs=configs)
+
+                print("gaussian distribution x", np.argmax(np.array(ball_position_x)))
+                print("gaussian distribution y", np.argmax(np.array(ball_position_y)))
+
+                print("x dtype", np.array(ball_position_x).dtype)
+                print("y dtype", np.array(ball_position_y).dtype)
+
+                # if ball_position_xy[0] < 0 or ball_position_xy[1] < 0:
+                #     continue
+
+                # Get the path to the segmentation frame from last frame
+
+                
+                seg_path = os.path.join(
+                    annos_dir,
+                    game,
+                    "segmentation_masks", "{}.png".format(last_frame))
+                if not os.path.isfile(seg_path):
+                    # print("smooth_idx: {} -
+                    # The segmentation path
+                    # {} is invalid".format(frame, seg_path))
+                    continue
+                events_dict = events_dict = {
+                    "bounce": 0,
+                    "net": 1,
+                    "empty_event": 2}
+
+                event_class = events_dict[event_type]
+
+                target_events = smooth_event_labelling(
+                    event_class, frame, event_frame)
+                events_infor.append(
+                    [image_paths,
+                    ball_position_x,
+                    ball_position_y,
+                    target_events,
+                    seg_path])
+
+                if (target_events[0] == 0) and (target_events[1] == 0):
+                    event_class = 2
+                events_labels.append(event_class)
+
+                # testing the events infor
+                events_infor = np.asarray(events_infor, dtype=object)
+                ball_position_x = events_infor[:, 1].tolist()
+                ball_position_y = events_infor[:, 2].tolist()
+
+                print("compiled shape x", len(ball_position_x))
+                print("compiled shape y", len(ball_position_y))
+
+                print("new gaussian distribution x", np.argmax(np.array(ball_position_x)))
+                print("new gaussian distribution y", np.argmax(np.array(ball_position_y)))
+                import tensorflow as tf
+
+                position_x_ds = tf.data.Dataset.from_tensor_slices(ball_position_x)
+                position_y_ds = tf.data.Dataset.from_tensor_slices(ball_position_y)
+
+                ds = tf.data.Dataset.zip((position_x_ds, position_y_ds))
+
+                for elm1, elm2 in ds.as_numpy_iterator():
+                    # print("dataset x", elm1)    
+                    # print("dataset y", elm2)
+
+                    print("dataset x", np.argmax(elm1))
+                    print("dataset y", np.argmax(elm2))
+
+                    print("the val x", elm1[np.argmax(elm1)])
+                    print("the val 2", elm2[np.argmax(elm2)])
+                break
+
+            break
+        break
+    
+        
+    return events_infor, events_labels
+
+if __name__ == "__main__":
+    # Test to see if dataset creation was successful
+    from configs import configs
+    import cv2
+
+    events_infor, events_labels = data_preparer(configs=configs)

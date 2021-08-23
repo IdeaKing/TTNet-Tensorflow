@@ -96,9 +96,37 @@ if __name__ == "__main__":
     from data_utils import *
     from configs import configs
     import cv2
+    import tensorflow as tf
 
     events_infor, events_labels = data_preparer(configs=configs)
+    
+    events_infor = np.asarray(events_infor, dtype=object)
+    ball_position_x = events_infor[:, 1].tolist()
+    ball_position_y = events_infor[:, 2].tolist()
 
+    position_x_ds = tf.data.Dataset.from_tensor_slices(ball_position_x)
+    position_y_ds = tf.data.Dataset.from_tensor_slices(ball_position_y)
+    ds = tf.data.Dataset.zip((position_x_ds, position_y_ds))
+
+
+    for pos_x, pos_y in ds.as_numpy_iterator():
+        x, y = ball_position(pos_x, pos_y, configs=configs)
+        print("full x", pos_x)
+        print("full y", pos_y)
+
+        print("shape x", len(pos_x))
+        print("shape y", len(pos_y))
+        # print("pos x", pos_x)
+        # if x != 0:
+        print("x", x)
+        print("y", y)
+        # print("pos_x", pos_x)
+        print("the value x", pos_x[np.argmax(pos_x)])
+        print("the value y", pos_y[np.argmax(pos_y)])
+        break
+            
+
+    """
     ttnet_dataset_creator = TTNetDataset(
         events_infor=events_infor,
         org_size=configs.original_image_shape,
@@ -106,6 +134,7 @@ if __name__ == "__main__":
         configs=configs)
 
     ttnet_dataset = ttnet_dataset_creator.get_dataset()
+    """
     
     
 

@@ -18,7 +18,7 @@ parser.add_argument(
 parser.add_argument(
     "--num-epochs",
     "-e",
-    default=30,
+    default=10,
     type=int,
     help="Number of epochs.")
 parser.add_argument(
@@ -34,11 +34,11 @@ parser.add_argument(
 parser.add_argument(
     "--batch-size",
     type=int,
-    default=8)
+    default=4)
 parser.add_argument(
     "--num-frames-sequence",
     type=int,
-    default=9)
+    default=5)
 parser.add_argument(
     "--checkpoint-frequency",
     type=int,
@@ -47,7 +47,7 @@ parser.add_argument(
 parser.add_argument(
     "--testing-epoch",
     type=int,
-    default=29,
+    default=10,
     help="The epoch to test.")
 parser.add_argument(
     "--save-outputs",
@@ -68,7 +68,7 @@ parser.add_argument(
     default=(1920,1080))
 parser.add_argument(
     "--processed-image-shape",
-    default=(320,128))
+    default=(640,256))
 parser.add_argument(
     "--shuffle_size",
     default=100)

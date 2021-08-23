@@ -1,5 +1,11 @@
 # TTNET Ignores
 dataset/
+test-001
+test-ball-loc-001
+test-ball-loc-002
+test-ball-loc-003
+test-ball-loc-004
+test-ball-loc-005
 
 
 # Byte-compiled / optimized / DLL files
