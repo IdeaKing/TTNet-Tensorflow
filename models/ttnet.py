@@ -8,6 +8,7 @@ from tensorflow.keras.layers import (Conv2D, ReLU, Flatten, Dense,
                                      BatchNormalization, MaxPool2D,
                                      Dropout, Conv2DTranspose)
 from tensorflow.keras import (Input, Model)
+from utils.configs import configs
 
 
 def conv_block(layer, filters, maxpool=True):
@@ -24,7 +25,7 @@ def conv_block(layer, filters, maxpool=True):
     return x
 
 
-def ball_detection(input, dropout):
+def ball_detection(input, dropout, output):
     """Ball detection stage."""
     conv1 = Conv2D(
         filters=64,
@@ -43,19 +44,29 @@ def ball_detection(input, dropout):
     block6 = conv_block(layer=block5, filters=256)
     drop3 = Dropout(rate=dropout)(block6)
     flat = Flatten()(drop3)
-    fc1 = Dense(units=1792, activation="linear")(flat)
+    fc1 = Dense(
+        units=(2* (output[0]+output[1])), 
+        activation="linear")(flat)
     relu2 = ReLU()(fc1)
     drop4 = Dropout(rate=dropout)(relu2)
     # Swallow Tail Shape X
-    fc2_x = Dense(units=640, activation="linear")(drop4)
+    fc2_x = Dense(
+        units=(output[0]*2), 
+        activation="linear")(drop4)
     relu3_x = ReLU()(fc2_x)
     drop5_x = Dropout(rate=dropout)(relu3_x)
-    fc3_x = Dense(units=640, activation="sigmoid")(drop5_x)
+    fc3_x = Dense(
+        units=output[0], 
+        activation="sigmoid")(drop5_x)
     # Swallow Tail Shape Y
-    fc2_y = Dense(units=256, activation="linear")(drop4)
+    fc2_y = Dense(
+        units=(output[1]*2), 
+        activation="linear")(drop4)
     relu3_y = ReLU()(fc2_y)
     drop5_y = Dropout(rate=dropout)(relu3_y)
-    fc3_y = Dense(units=256, activation="sigmoid")(drop5_y)
+    fc3_y = Dense(
+        units=output[1], 
+        activation="sigmoid")(drop5_y)
     return fc3_x, fc3_y, block2, block3, block4, block5, block6
 
 
@@ -143,7 +154,9 @@ def ttnet(dims, dropout=0.1, ball_detection_stage=False):
     if ball_detection_stage==True:
         input = Input(shape=(dims[0], dims[1], dims[2]))
         detection_x, detection_y, block2, block3, block4, block5, block6 = ball_detection(
-            input=input, dropout=dropout)
+            input=input, 
+            dropout=dropout, 
+            output=configs.processed_image_shape)
         model = Model(inputs=[input], outputs=[detection_x, detection_y])
     else:
         input = Input(shape=(dims[0], dims[1], dims[2]))
